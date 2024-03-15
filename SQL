@@ -1,0 +1,85 @@
+CREATE DATABASE store_management;
+USE store_management;
+
+CREATE TABLE UserCredentials (
+    username VARCHAR(255) PRIMARY KEY,
+    password VARCHAR(255),
+    role VARCHAR(20) -- Can be 'admin' or 'customer'
+);
+CREATE TABLE ProductStocks (
+    product_name VARCHAR(255) PRIMARY KEY,
+    stock_quantity INT,
+    price DOUBLE
+);
+CREATE TABLE Customer (
+    CustomerID INT PRIMARY KEY NOT NULL auto_increment,
+    name VARCHAR(255),
+    emailid VARCHAR(255),
+    password VARCHAR(255),
+    balance DOUBLE
+);
+CREATE TABLE Coupons (
+    coupon_code VARCHAR(255) PRIMARY KEY,
+    discount_percentage DOUBLE,
+    expiration_date integer
+);
+CREATE TABLE CustomerCoupons (
+    customer_id INT,
+    coupon_code VARCHAR(255),
+    FOREIGN KEY (customer_id) REFERENCES Customer(CustomerID),
+    PRIMARY KEY (customer_id, coupon_code)
+);
+CREATE TABLE PastTransactions (
+    transaction_id VARCHAR(255) PRIMARY KEY,
+    customer_id INT,
+    product_name VARCHAR(255),
+    quantity INT,
+    price DOUBLE,
+    transaction_date TIMESTAMP,
+    FOREIGN KEY (customer_id) REFERENCES Customer(CustomerID)
+);
+
+INSERT INTO UserCredentials (username, password, role) VALUES
+('admin', 'pass', 'admin'),
+('customer', 'pass', 'customer');
+
+INSERT INTO ProductStocks (product_name, stock_quantity, price) VALUES
+('pen1', 10, 100),
+('pen2',20, 200),
+('pen3', 30, 300);
+
+INSERT INTO Customer (CustomerID, name, emailid, password, balance) VALUES
+(1, 'customer1', 'customer1@example.com', '1234567890', 1000),
+(2, 'customer2', 'customer2@example.com', '2345678901', 2000),
+(3, 'customer3', 'customer3@example.com', '3456789012', 3000);
+
+INSERT INTO Coupons (coupon_code, discount_percentage, expiration_date) VALUES
+('coupon1', 10, 11122024),
+('coupon2', 20, 12102024),
+('coupon3', 30, 09092024);
+
+INSERT INTO CustomerCoupons (customer_id, coupon_code) VALUES
+(1, 'coupon1'),
+(2, 'coupon2'),
+(3,'coupon3');
+
+INSERT INTO PastTransactions (transaction_id, customer_id, product_name, quantity, price, transaction_date) 
+VALUES 
+    ('transaction1', 1, 'pen1', 5, 50.0, NOW()),
+    ('transaction2', 1, 'pen2', 10, 200.0, NOW()),
+    ('transaction3', 1, 'pen3', 15, 450.0, NOW());
+
+INSERT INTO Coupons (coupon_code, discount_percentage, expiration_date) VALUES
+('coupon10', 10, 01102024),
+('coupon20', 20, 11112024),
+('coupon30', 30, 12122024);
+
+INSERT INTO PastTransactions (transaction_id, customer_id, product_name, quantity, price, transaction_date) 
+VALUES ('transaction31', 1, 'pen3', 15, 450.0, '2024-03-14 00:00:00');
+
+
+SELECT * FROM PastTransactions;
+SELECT * FROM ProductStocks;
+SELECT * FROM Coupons;
+SELECT * FROM Customer;
+SELECT * FROM CustomerCoupons;
