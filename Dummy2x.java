@@ -15,12 +15,32 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.UUID;
-
+import java.util.stream.Stream;
+import java.util.Properties;
+import com.itextpdf.text.Chunk;
 import com.itextpdf.text.Document;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.FontFactory;
 import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-
+import com.itextpdf.text.Font;
+import com.itextpdf.text.pdf.PdfPCell;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Part;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMultipart;
+import javax.mail.Multipart;
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
 
 public class Dummy2x {
 
@@ -84,7 +104,7 @@ public class Dummy2x {
             System.out.println("1. Login");
             System.out.println("2. New Customer");
             System.out.println("3. Exit");
-            System.out.print("Enter your choice: ");
+            System.out.print("\nEnter your choice: ");
             choice = scanner.nextInt();
             scanner.nextLine();
 
@@ -425,20 +445,39 @@ public class Dummy2x {
     }
 
     private static void mailCustomers() {
-        System.out.println("\n******************************************");
-        System.out.println("***          Invoice Details          ***");
-        System.out.println("******************************************");
-        for (String transactionId : pastTransactions.keySet()) {
-            String[] data = pastTransactions.get(transactionId).split(":");
-            System.out.printf("Transaction ID: %s%n", transactionId);
-            System.out.printf("Customer ID: %s%n", data[0]);
-            System.out.printf("Product Name: %s%n", data[1]);
-            System.out.printf("Quantity: %s%n", data[2]);
-            System.out.printf("Price: Rs.%s%n", data[3]);
-            System.out.println("---------------------------------");
-        }
-        System.out.println("******************************************");
-    }
+    	 final String username = "adminmail@outlook.com";
+	        final String password = "adminpass";
+	
+	        Properties props = new Properties();
+	        props.put("mail.smtp.auth", "true");
+	        props.put("mail.smtp.starttls.enable", "true");
+	        props.put("mail.smtp.host", "outlook.office365.com");
+	        props.put("mail.smtp.port", "587");
+	
+	        Session session = Session.getInstance(props,
+	          new javax.mail.Authenticator() {
+	            protected PasswordAuthentication getPasswordAuthentication() {
+	                return new PasswordAuthentication(username, password);
+	            }	
+	          });
+	
+	        try {
+	
+	            Message message = new MimeMessage(session);
+	            message.setFrom(new InternetAddress("adminmail@outlook.com"));
+	            message.setRecipients(Message.RecipientType.TO,
+	                InternetAddress.parse("receivermail@gmail.com"));
+	            message.setSubject("Test");
+	            message.setText("THANKS FOR USING H E R O STYLUS");
+	
+	            Transport.send(message);
+	
+	            System.out.println("Done");
+	
+	        } catch (MessagingException e) {
+	            throw new RuntimeException(e);
+	        }
+	    }
 
     private static void customerMenu() {
         String customerId;
@@ -649,8 +688,16 @@ public class Dummy2x {
             PdfWriter.getInstance(document, new FileOutputStream("INV-" + transactionUnique + ".pdf"));
             document.open();
 
+            // Add Brand Name as top Heading in Bold and Different Font
+            Font brandFont = new Font(Font.FontFamily.TIMES_ROMAN, 24, Font.BOLD);
+            Paragraph brandName = new Paragraph("HERO STYLUS", brandFont);
+            brandName.setAlignment(Element.ALIGN_CENTER);
+            brandName.setSpacingAfter(20); // Increase margin bottom
+            document.add(brandName);
+
             // Add customer details
-            document.add(new Paragraph("Invoice"));
+            String invId = "INV-"+ transactionUnique;
+            document.add(new Paragraph("Invoice ID : "+ invId));
             // Fetch customer details
             if (customerResult.next()) {
                 String customerName = customerResult.getString("customer_name");
@@ -660,9 +707,10 @@ public class Dummy2x {
             }
 
             // Add transaction details in table format
-            document.add(new Paragraph("Transaction Details:"));
+            document.add(new Paragraph("\nTransaction Details:"));
             // Create table
             PdfPTable table = new PdfPTable(5); // Adjust the number of columns as needed
+            table.setHorizontalAlignment(Element.ALIGN_CENTER); // Center-align the table
             // Add headers
             table.addCell("Transaction ID");
             table.addCell("Product");
@@ -679,21 +727,33 @@ public class Dummy2x {
             }
             document.add(table);
 
+            // Add spacing between table and price comparison after discount
+            document.add(new Paragraph("\n\n"));
+
             // Add other details in classic invoice format
             // Add before discount total
             document.add(new Paragraph("Total Price Before Discount: " + beforeDiscountTotal));
             // Calculate and add discount
-            double discount = 100 - (Math.abs(beforeDiscountTotal - grandTotal) / beforeDiscountTotal) * 100;
+            double discount = 0;
+            if(beforeDiscountTotal != grandTotal) {
+                discount = 100 - (Math.abs(beforeDiscountTotal - grandTotal) / beforeDiscountTotal) * 100;
+            }
+            else {
+                discount = 0;
+            }            
             document.add(new Paragraph("Discount: " + discount + "%"));
-            // Add grand total
-            document.add(new Paragraph("Grand Total: " + grandTotal));
+            
+            // Add Grand Total at right side
+            Font totalFont = new Font(Font.FontFamily.TIMES_ROMAN, 14, Font.BOLD);
+            Paragraph grandTotalPara = new Paragraph("Grand Total: " + grandTotal, totalFont);
+            grandTotalPara.setAlignment(Element.ALIGN_RIGHT);
+            document.add(grandTotalPara);
 
             document.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-
     private static void purchaseProducts() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
